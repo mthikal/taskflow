@@ -24,15 +24,14 @@ pipeline {
             }
         }
         stage('Deploy') {
-            steps {
-                sh '''
-                    . env/bin/activate
-                    gunicorn --bind 0.0.0.0:5000 wsgi:app --daemon \
-                        --pid /tmp/taskflow.pid \
-                        --access-logfile /tmp/taskflow-access.log
-                    echo "App running on http://localhost:5000"
-                '''
-            }
-        }
+          steps {
+              sh '''
+                  docker build -t taskflow-app .
+                  docker stop taskflow-container || true
+                  docker rm taskflow-container || true
+                  docker run -d -p 5000:5000 --name taskflow-container taskflow-app
+              '''
+          }
+      }
     }
 }
