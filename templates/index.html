@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TaskFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --card: #1e1e24;
+    --border: #2a2a33;
+    --accent: #7b5ea7;
+    --accent2: #e06c75;
+    --green: #5cb85c;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px 80px;
+  }
+
+  /* noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 620px; }
+
+  /* ── HEADER ── */
+  header { margin-bottom: 40px; }
+  .logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(135deg, #c9b8e8 0%, #7b5ea7 50%, #e06c75 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* ── STATS BAR ── */
+  .stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .stat strong { font-size: 20px; color: var(--text); }
+
+  /* ── INPUT ── */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  input[type="text"]::placeholder { color: var(--muted); }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(123,94,167,.2);
+  }
+  .btn-add {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 22px;
+    font-family: var(--mono);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { background: #9370c4; }
+  .btn-add:active { transform: scale(.97); }
+
+  /* ── FILTER TABS ── */
+  .filters {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .filter-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    padding: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .filter-btn.active {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+
+  /* ── TASK LIST ── */
+  #task-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .task-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: slide-in .25s ease;
+    transition: opacity .2s, transform .2s;
+  }
+  .task-item:hover { border-color: #3a3a48; }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-item.done { opacity: .55; }
+
+  .check-btn {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s;
+    color: #fff;
+    font-size: 12px;
+  }
+  .check-btn:hover { border-color: var(--green); }
+  .task-item.done .check-btn {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .task-title {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.4;
+    transition: text-decoration .2s;
+  }
+  .task-item.done .task-title {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .task-meta {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 2px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity .15s, color .15s;
+  }
+  .task-item:hover .del-btn { opacity: 1; }
+  .del-btn:hover { color: var(--accent2); }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty p { font-family: var(--mono); font-size: 12px; letter-spacing: 2px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    transition: transform .3s ease;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="logo">v1.0.0</div>
+    <h1>TaskFlow</h1>
+    <p class="subtitle">minimal task tracker · Flask REST API · pytest · Jenkins</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><strong id="stat-total">0</strong>Total</div>
+    <div class="stat"><strong id="stat-done">0</strong>Done</div>
+    <div class="stat"><strong id="stat-pending">0</strong>Pending</div>
+  </div>
+
+  <div class="input-row">
+    <input id="new-task" type="text" placeholder="Add a new task..." maxlength="120" />
+    <button class="btn-add" onclick="addTask()">+ Add</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all"    onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn"        data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
+    <button class="filter-btn"        data-filter="done"    onclick="setFilter('done',this)">Done</button>
+  </div>
+
+  <div id="task-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let tasks = [];
+  let filter = 'all';
+
+  const $ = id => document.getElementById(id);
+
+  async function api(path, method='GET', body=null) {
+    const r = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : null
+    });
+    return r.json();
+  }
+
+  async function loadTasks() {
+    tasks = await api('/api/tasks');
+    render();
+  }
+
+  async function addTask() {
+    const inp = $('new-task');
+    const title = inp.value.trim();
+    if (!title) { toast('⚠ Title cannot be empty'); return; }
+    const t = await api('/api/tasks', 'POST', { title });
+    if (t.error) { toast('Error: ' + t.error); return; }
+    tasks.unshift(t);
+    inp.value = '';
+    render();
+    toast('✓ Task added');
+  }
+
+  async function toggleTask(id) {
+    const t = await api(`/api/tasks/${id}`, 'PATCH');
+    tasks = tasks.map(x => x.id === id ? t : x);
+    render();
+  }
+
+  async function deleteTask(id) {
+    await api(`/api/tasks/${id}`, 'DELETE');
+    tasks = tasks.filter(x => x.id !== id);
+    render();
+    toast('🗑 Task removed');
+  }
+
+  function setFilter(f, btn) {
+    filter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  function render() {
+    const total   = tasks.length;
+    const done    = tasks.filter(t => t.done).length;
+    const pending = total - done;
+
+    $('stat-total').textContent   = total;
+    $('stat-done').textContent    = done;
+    $('stat-pending').textContent = pending;
+
+    const visible = tasks.filter(t => {
+      if (filter === 'done')    return t.done;
+      if (filter === 'pending') return !t.done;
+      return true;
+    });
+
+    const list = $('task-list');
+    if (!visible.length) {
+      list.innerHTML = `<div class="empty">
+        <div class="empty-icon">✦</div>
+        <p>${filter === 'all' ? 'no tasks yet' : 'nothing here'}</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = visible.map(t => {
+      const ts = new Date(t.created_at + 'Z').toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      return `<div class="task-item${t.done ? ' done' : ''}" id="task-${t.id}">
+        <button class="check-btn" onclick="toggleTask(${t.id})" title="Toggle">${t.done ? '✓' : ''}</button>
+        <span class="task-title">${escHtml(t.title)}</span>
+        <span class="task-meta">#${t.id}<br>${ts}</span>
+        <button class="del-btn" onclick="deleteTask(${t.id})" title="Delete">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  $('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+  loadTasks();
+</script>
+</body>
+</html>

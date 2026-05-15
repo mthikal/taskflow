@@ -1,0 +1,16 @@
+# virtual environment
+env/
+
+# pytest artifacts
+__pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
+
+# jenkins test report output
+reports/
+
+# python bytecode anywhere in subdirs
+**/__pycache__/
+*.pyc
+*.pyo
